@@ -10,7 +10,7 @@ WORLD_HEIGHT = 600
 GROUND_Y = 480
 
 FPS = 60
-STEP_MSC = 1000 / FPS  # milliseconds per frame
+STEP_MS = 1000 / FPS  # milliseconds per frame
 SCROLL_SPEED = 8  # px/frame
 GRAVITY = 0.8  # px/frame²
 

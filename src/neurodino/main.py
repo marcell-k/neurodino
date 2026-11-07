@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING
 import pygame
 from pygame import Surface
 
-from neurodino.agent import _actions
+from neurodino.agent import actions
 from neurodino.config import (
     FPS,
     GROUND_Y,
@@ -85,7 +85,7 @@ def main() -> None:
                 running = False
 
         if brain is not None:
-            jump, duck, holding = _actions(brain, game, holding=holding)
+            jump, duck, holding = actions(brain, game, holding=holding)
             game.step(jump=jump, duck=duck)
         else:
             keys = pygame.key.get_pressed()

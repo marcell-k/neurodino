@@ -21,7 +21,7 @@ from neurodino.config import (
     SPAWN_GAP_MAX,
     SPAWN_GAP_MIN,
     SPEED_GAIN_PER_SCORE,
-    STEP_MSC,
+    STEP_MS,
     WORLD_WIDTH,
 )
 from neurodino.specs import SPAWN_SPECS, ObjectSpec
@@ -51,7 +51,7 @@ class Object:
 
     def image_key(self, frame: int) -> str:
         """Image key for the object's current animation frame."""
-        return self.spec.frame_name(frame * STEP_MSC)
+        return self.spec.frame_name(frame * STEP_MS)
 
 
 @dataclass(slots=True)
@@ -93,22 +93,16 @@ class Game:
             return
         self.speed = min(MAX_SCROLL_SPEED, SCROLL_SPEED + SPEED_GAIN_PER_SCORE * self.score)
         self.distance += self.speed
-        if self._should_spawn():
+        if self.distance >= self.next_spawn_distance:
             self._spawn()
         jump_pressed = jump and not self.jump_was_down
         self.jump_was_down = jump
 
         if not self.dino.airborne:
-            self.dino.ducking = duck
-            self.dino.width = DINO_DUCK_WIDTH if duck else DINO_WIDTH
-            self.dino.height = DINO_DUCK_HEIGHT if duck else DINO_HEIGHT
-            self.dino.y = GROUND_Y - self.dino.height
+            self._pose(duck=duck)
 
         if jump_pressed and not self.dino.airborne:
-            self.dino.ducking = False
-            self.dino.width = DINO_WIDTH
-            self.dino.height = DINO_HEIGHT
-            self.dino.y = GROUND_Y - DINO_HEIGHT
+            self._pose(duck=False)
             self.velocity = JUMP_VELOCITY
 
         if self.velocity < 0 and not jump:
@@ -123,16 +117,20 @@ class Game:
         else:
             self.dino.airborne = True
 
-        self._advance_objects(self.speed, self.dino)
+        self._advance_objects(self.speed)
         if self._collides():
             self.alive = False
             self.velocity = 0
             self.dino.airborne = False
-            self.dino.ducking = False
-            self.dino.width = DINO_WIDTH
-            self.dino.height = DINO_HEIGHT
-            self.dino.y = GROUND_Y - DINO_HEIGHT
+            self._pose(duck=False)
         self.frames += 1
+
+    def _pose(self, *, duck: bool) -> None:
+        """Put the dino on the ground in its standing or ducking pose."""
+        self.dino.ducking = duck
+        self.dino.width = DINO_DUCK_WIDTH if duck else DINO_WIDTH
+        self.dino.height = DINO_DUCK_HEIGHT if duck else DINO_HEIGHT
+        self.dino.y = GROUND_Y - self.dino.height
 
     def _collides(self) -> bool:
         """Whether the dino overlaps with any object."""
@@ -145,18 +143,14 @@ class Game:
             for ob in self.objects
         )
 
-    def _advance_objects(self, dx: float, dino: Dino) -> None:
+    def _advance_objects(self, dx: float) -> None:
         for ob in self.objects:
             ob.x -= dx
-            if not ob.scored and ob.x + ob.width < dino.x:
+            if not ob.scored and ob.x + ob.width < self.dino.x:
                 ob.scored = True
                 self.score += 1
         while self.objects and self.objects[0].x <= -self.objects[0].width:
             self.objects.popleft()
-
-    def _should_spawn(self) -> bool:
-        """Whether another object should be spawned."""
-        return self.distance >= self.next_spawn_distance
 
     def _spawn(self) -> None:
         """Spawn one random object at the right edge."""

@@ -45,42 +45,33 @@ class ObjectSpec:
         return self.frames[int(elapsed_ms // self.frame_ms) % len(self.frames)]
 
 
+def _cactus_specs(
+    kind: ObjectType, prefix: str, height: int, widths: dict[Size, int]
+) -> dict[tuple[ObjectType, Size], ObjectSpec]:
+    """Build one spec per cactus width variant."""
+    return {
+        (kind, size): ObjectSpec(
+            kind=kind,
+            frames=(f"{prefix}_{size.name.lower()}",),
+            width=width,
+            height=height,
+        )
+        for size, width in widths.items()
+    }
+
+
 CACTUS_SPECS: dict[tuple[ObjectType, Size], ObjectSpec] = {
-    (ObjectType.SMALL_CACTUS, Size.SMALL): ObjectSpec(
-        kind=ObjectType.SMALL_CACTUS,
-        frames=("small_cactus_small",),
-        width=40,
+    **_cactus_specs(
+        ObjectType.SMALL_CACTUS,
+        "small_cactus",
         height=71,
+        widths={Size.SMALL: 40, Size.MID: 68, Size.BIG: 105},
     ),
-    (ObjectType.SMALL_CACTUS, Size.MID): ObjectSpec(
-        kind=ObjectType.SMALL_CACTUS,
-        frames=("small_cactus_mid",),
-        width=68,
-        height=71,
-    ),
-    (ObjectType.SMALL_CACTUS, Size.BIG): ObjectSpec(
-        kind=ObjectType.SMALL_CACTUS,
-        frames=("small_cactus_big",),
-        width=105,
-        height=71,
-    ),
-    (ObjectType.LARGE_CACTUS, Size.SMALL): ObjectSpec(
-        kind=ObjectType.LARGE_CACTUS,
-        frames=("large_cactus_small",),
-        width=48,
+    **_cactus_specs(
+        ObjectType.LARGE_CACTUS,
+        "large_cactus",
         height=95,
-    ),
-    (ObjectType.LARGE_CACTUS, Size.MID): ObjectSpec(
-        kind=ObjectType.LARGE_CACTUS,
-        frames=("large_cactus_mid",),
-        width=99,
-        height=95,
-    ),
-    (ObjectType.LARGE_CACTUS, Size.BIG): ObjectSpec(
-        kind=ObjectType.LARGE_CACTUS,
-        frames=("large_cactus_big",),
-        width=102,
-        height=95,
+        widths={Size.SMALL: 48, Size.MID: 99, Size.BIG: 102},
     ),
 }
 

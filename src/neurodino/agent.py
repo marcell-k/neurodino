@@ -47,7 +47,7 @@ def _features(game: Game) -> list[float]:
     return feats
 
 
-def _actions(nn: NeuralNetwork, game: Game, *, holding: bool) -> tuple[bool, bool, bool]:
+def actions(nn: NeuralNetwork, game: Game, *, holding: bool) -> tuple[bool, bool, bool]:
     """Return `(jump, duck, holding)`; holding keeps jump down for a long jump."""
     if game.dino.airborne:
         holding = holding and game.velocity < 0  # hold until the apex
@@ -70,6 +70,6 @@ def run_episode(nn: NeuralNetwork, seed: int, max_frames: int = MAX_FRAMES) -> f
     game = Game(Random(seed), Dino.default())
     holding = False
     while game.alive and game.frames < max_frames:
-        jump, duck, holding = _actions(nn, game, holding=holding)
+        jump, duck, holding = actions(nn, game, holding=holding)
         game.step(jump=jump, duck=duck)
     return game.frames + SCORE_BONUS * game.score
