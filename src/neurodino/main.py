@@ -58,7 +58,7 @@ def main() -> None:
     clock = pygame.time.Clock()
     images = load_images()
     font = SysFont(None, 32, bold=True)
-    game = Game(Random(), Dino(GROUND_Y, 20, DINO_WIDTH, DINO_HEIGHT))
+    game = Game(Random(), Dino(80, GROUND_Y - DINO_HEIGHT, DINO_WIDTH, DINO_HEIGHT))
 
     running = True
     jump = False
@@ -68,11 +68,8 @@ def main() -> None:
         for e in pygame.event.get():
             if e.type == pygame.QUIT:
                 running = False
-            elif e.type == pygame.KEYDOWN and e.key == pygame.K_k:
-                jump = True
-            elif e.type == pygame.KEYDOWN and e.key == pygame.K_j:
-                duck = True
-        game.step(jump=jump, duck=duck)
+        keys = pygame.key.get_pressed()
+        game.step(jump=keys[pygame.K_k], duck=keys[pygame.K_j])
         _draw(display, images, font, game)
         pygame.display.flip()
 

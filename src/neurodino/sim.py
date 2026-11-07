@@ -5,12 +5,12 @@ from dataclasses import dataclass
 from enum import Enum, IntEnum
 from typing import TYPE_CHECKING
 
-from neurodino.config import DINO_DUCK_HEIGTH, DINO_HEIGHT, GROUND_Y
+from neurodino.config import DINO_DUCK_HEIGHT, DINO_HEIGHT, GROUND_Y, JUMP_CUT_VELOCITY
 
 if TYPE_CHECKING:
     from random import Random
 
-from neurodino.config import GRAVITY, JUMP_VELOCITY, STEP_MSC, WORLD_HEIGHT, WORLD_WIDTH
+from neurodino.config import GRAVITY, JUMP_VELOCITY, STEP_MSC, WORLD_WIDTH
 
 
 class ObjectType(Enum):
@@ -79,6 +79,7 @@ class Game:
         self.dino = dino
         self.frames = 0
         self.distance = 0.0
+        self.jump_was_down: bool = False
 
     def step(self, *, jump: bool, duck: bool) -> None:
         """Advance one time."""
@@ -86,8 +87,23 @@ class Game:
             return
         if self._should_spawn():
             self._spawn()
-        if jump and not self.dino.airborne:
+        jump_pressed = jump and not self.jump_was_down
+        self.jump_was_down = jump
+
+        if not self.dino.airborne:
+            self.dino.ducking = duck
+            self.dino.height = DINO_DUCK_HEIGHT if duck else DINO_HEIGHT
+            self.dino.y = GROUND_Y - self.dino.height
+
+        if jump_pressed and not self.dino.airborne:
+            self.dino.ducking = False
+            self.dino.height = DINO_HEIGHT
+            self.dino.y = GROUND_Y - DINO_HEIGHT
             self.velocity = JUMP_VELOCITY
+
+        if self.velocity < 0 and not jump:
+            self.velocity = max(self.velocity, JUMP_CUT_VELOCITY)
+
         self.velocity += GRAVITY
         self.dino.y += self.velocity
         if self.dino.y + self.dino.height >= GROUND_Y:
@@ -96,12 +112,7 @@ class Game:
             self.dino.airborne = False
         else:
             self.dino.airborne = True
-        if duck:
-            self.dino.ducking = True
-            self.dino.y = GROUND_Y - DINO_DUCK_HEIGTH
-        else:
-            self.dino.ducking = False
-            self.dino.y = GROUND_Y - DINO_HEIGHT
+
         self._advance_objects(STEP_MSC, self.dino)
         # if self._collides():
         #     self.alive = False

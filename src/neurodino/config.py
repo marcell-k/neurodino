@@ -15,9 +15,10 @@ GRAVITY = 0.8  # px/ms
 
 # Dino
 DINO_HEIGHT = 94
-DINO_DUCK_HEIGTH = 60
+DINO_DUCK_HEIGHT = 60
 DINO_WIDTH = 88
-JUMP_VELOCITY = -20  # px/ms
+JUMP_VELOCITY = -20  # px/frame
+JUMP_CUT_VELOCITY = -10  # upwarrd speed left after releasing jump
 
 
 # Objects
