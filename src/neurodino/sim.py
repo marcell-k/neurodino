@@ -5,6 +5,8 @@ from dataclasses import dataclass
 from enum import Enum, IntEnum
 from typing import TYPE_CHECKING
 
+from neurodino.config import DINO_DUCK_HEIGTH, DINO_HEIGHT, GROUND_Y
+
 if TYPE_CHECKING:
     from random import Random
 
@@ -58,7 +60,7 @@ class Dino:
     """Dino ."""
 
     x: int
-    y: int
+    y: float
     width: int
     height: int
     ducking: bool = False
@@ -70,7 +72,6 @@ class Game:
 
     def __init__(self, rng: Random, dino: Dino) -> None:
         self._rng = rng
-        self.y: float = WORLD_HEIGHT
         self.objects: deque[Object] = deque()
         self.velocity = 0.0
         self.score = 0
@@ -85,14 +86,22 @@ class Game:
             return
         if self._should_spawn():
             self._spawn()
-        if jump:
+        if jump and not self.dino.airborne:
             self.velocity = JUMP_VELOCITY
-        if duck:
-            self.dino.width = 80
+        self.velocity += GRAVITY
+        self.dino.y += self.velocity
+        if self.dino.y + self.dino.height >= GROUND_Y:
+            self.dino.y = GROUND_Y - self.dino.height
+            self.velocity = 0
+            self.dino.airborne = False
         else:
-            self.dino.width = 100
-        self.velocity = self.velocity + GRAVITY * STEP_MSC
-        self.y += self.velocity * STEP_MSC
+            self.dino.airborne = True
+        if duck:
+            self.dino.ducking = True
+            self.dino.y = GROUND_Y - DINO_DUCK_HEIGTH
+        else:
+            self.dino.ducking = False
+            self.dino.y = GROUND_Y - DINO_HEIGHT
         self._advance_objects(STEP_MSC, self.dino)
         # if self._collides():
         #     self.alive = False
@@ -101,7 +110,7 @@ class Game:
     def _advance_objects(self, dx: float, dino: Dino) -> None:
         for ob in self.objects:
             ob.x -= dx
-            if not ob.scored and ob.x + ob.width < dino.width:
+            if not ob.scored and ob.x + ob.width < dino.x:
                 ob.scored = True
                 self.score += 1
         while self.objects and self.objects[0].x <= -self.objects[0].width:

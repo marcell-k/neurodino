@@ -47,8 +47,7 @@ def _draw(display: Surface, images: dict[str, Surface], font: Font, game: Game) 
         display.blit(img, (int(ob.x), y))
 
     img = images[_dino_key(game)]
-    y = game.dino.y if game.dino.airborne else GROUND_Y - img.get_height()
-    display.blit(img, (game.dino.x, y))
+    display.blit(img, (game.dino.x, game.dino.y))
 
 
 def main() -> None:
@@ -59,7 +58,7 @@ def main() -> None:
     clock = pygame.time.Clock()
     images = load_images()
     font = SysFont(None, 32, bold=True)
-    game = Game(Random(), Dino(300, 20, DINO_WIDTH, DINO_HEIGHT))
+    game = Game(Random(), Dino(GROUND_Y, 20, DINO_WIDTH, DINO_HEIGHT))
 
     running = True
     jump = False
