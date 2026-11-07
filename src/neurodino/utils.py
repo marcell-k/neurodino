@@ -21,6 +21,7 @@ def load_images() -> dict[str, Surface]:
         "small_cactus_small": _load_image("Cactus/SmallCactus1.png"),
         "small_cactus_mid": _load_image("Cactus/SmallCactus2.png"),
         "small_cactus_big": _load_image("Cactus/SmallCactus3.png"),
+        "dino_dead": _load_image("Dino/DinoDead.png"),
         "dino_duck_1": _load_image("Dino/DinoDuck1.png"),
         "dino_duck_2": _load_image("Dino/DinoDuck2.png"),
         "dino_jump": _load_image("Dino/DinoJump.png"),

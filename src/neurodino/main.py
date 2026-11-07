@@ -4,7 +4,6 @@ from random import Random
 
 import pygame
 from pygame import Surface
-from pygame.font import Font, SysFont
 
 from neurodino.config import (
     BACKGROUND,
@@ -31,7 +30,7 @@ def _dino_key(game: Game) -> str:
     return "dino_run_1" if (game.frames // 6) % 2 == 0 else "dino_run_2"
 
 
-def _draw(display: Surface, images: dict[str, Surface], font: Font, game: Game) -> None:
+def _draw(display: Surface, images: Images, game: Game) -> None:
     """Draw current state of the game."""
     display.fill(BACKGROUND)
 
@@ -56,12 +55,9 @@ def main() -> None:
     pygame.display.set_caption("Dino")
     clock = pygame.time.Clock()
     images = load_images()
-    font = SysFont(None, 32, bold=True)
     game = Game(Random(), Dino(80, GROUND_Y - DINO_HEIGHT, DINO_WIDTH, DINO_HEIGHT))
 
     running = True
-    jump = False
-    duck = False
     while running:
         clock.tick(FPS)
         for e in pygame.event.get():
@@ -69,7 +65,7 @@ def main() -> None:
                 running = False
         keys = pygame.key.get_pressed()
         game.step(jump=keys[pygame.K_k], duck=keys[pygame.K_j])
-        _draw(display, images, font, game)
+        _draw(display, images, game)
         pygame.display.flip()
 
     pygame.quit()

@@ -92,3 +92,5 @@ BIRD_SPEC = ObjectSpec(
     on_ground=False,
     frame_ms=250,
 )
+
+SPAWN_SPECS: tuple[ObjectSpec, ...] = (*CACTUS_SPECS.values(), BIRD_SPEC)
