@@ -61,6 +61,8 @@ class Dino:
     y: int
     width: int
     height: int
+    ducking: bool = False
+    airborne: bool = False
 
 
 class Game:
@@ -75,6 +77,7 @@ class Game:
         self.alive: bool = True
         self.dino = dino
         self.frames = 0
+        self.distance = 0.0
 
     def step(self, *, jump: bool, duck: bool) -> None:
         """Advance one time."""

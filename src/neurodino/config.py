@@ -6,6 +6,8 @@ from pathlib import Path
 IMAGES_DIR = Path("assets")
 WORLD_WIDTH = 1100
 WORLD_HEIGHT = 600
+GROUND_Y = 480
+BACKGROUND = (255, 255, 255)
 
 FPS = 60
 STEP_MSC = 1000 / FPS

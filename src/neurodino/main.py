@@ -6,24 +6,49 @@ import pygame
 from pygame import Surface
 from pygame.font import Font, SysFont
 
-from neurodino.config import DINO_HEIGHT, DINO_WIDTH, FPS, WORLD_HEIGHT, WORLD_WIDTH
-from neurodino.sim import Dino, Game, Object
+from neurodino.config import (
+    BACKGROUND,
+    DINO_HEIGHT,
+    DINO_WIDTH,
+    FPS,
+    GROUND_Y,
+    WORLD_HEIGHT,
+    WORLD_WIDTH,
+)
+from neurodino.sim import Dino, Game, Object, ObjectType
 from neurodino.utils import load_images
 
 type Images = dict[str, Surface]
 
 
-def _draw_object(surface: Surface, images: Images, ob: Object, game: Game) -> None:
-    image = images[ob.file_name(game.frames)]
-    surface.blit(image, (ob.x, ob.y))
+def _dino_key(game: Game) -> str:
+    if not game.alive:
+        return "dino_dead"
+    if game.dino.airborne:
+        return "dino_jump"
+    if game.dino.ducking:
+        return "dino_duck_1" if (game.frames // 6) % 2 == 0 else "dino_duck_2"
+    return "dino_run_1" if (game.frames // 6) % 2 == 0 else "dino_run_2"
 
 
 def _draw(display: Surface, images: dict[str, Surface], font: Font, game: Game) -> None:
     """Draw current state of the game."""
-    display.blit(images["dino_start"], (40, 400))
-    display.blit(images["track"], (0, 400 + game.dino.width - 18))
+    display.fill(BACKGROUND)
+
+    track = images["track"]
+    w = track.get_width()
+    offset = -(int(game.distance) % w)
+    display.blit(track, (offset, GROUND_Y))
+    display.blit(track, (offset + w, GROUND_Y))
+
     for ob in game.objects:
-        _draw_object(display, images, ob, game)
+        img = images[ob.file_name(game.frames)]
+        y = ob.y if ob.type is ObjectType.BIRD else GROUND_Y - img.get_height()
+        display.blit(img, (int(ob.x), y))
+
+    img = images[_dino_key(game)]
+    y = game.dino.y if game.dino.airborne else GROUND_Y - img.get_height()
+    display.blit(img, (game.dino.x, y))
 
 
 def main() -> None:
