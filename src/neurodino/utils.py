@@ -3,14 +3,18 @@
 import pygame
 from pygame import Surface
 
-from neurodino.config import IMAGES_DIR
+from neurodino.config import IMAGES_DIR, TRACK_GROUND_ROW
 
 
 def load_images() -> dict[str, Surface]:
     """Load all images."""
 
-    def _load_image(file_name: str) -> Surface:
-        return pygame.image.load(IMAGES_DIR / file_name).convert_alpha()
+    def _load_image(file_name: str, crop_top: int = 0) -> Surface:
+        image = pygame.image.load(IMAGES_DIR / file_name).convert_alpha()
+        if crop_top:
+            width, height = image.get_size()
+            image = image.subsurface((0, crop_top, width, height - crop_top)).copy()
+        return image
 
     return {
         "bird_up": _load_image("Bird/Bird1.png"),
@@ -29,5 +33,5 @@ def load_images() -> dict[str, Surface]:
         "dino_run_2": _load_image("Dino/DinoRun2.png"),
         "dino_start": _load_image("Dino/DinoStart.png"),
         "cloud": _load_image("Other/Cloud.png"),
-        "track": _load_image("Other/Track.png"),
+        "track": _load_image("Other/Track.png", TRACK_GROUND_ROW),
     }

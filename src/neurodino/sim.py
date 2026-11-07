@@ -7,7 +7,9 @@ from typing import TYPE_CHECKING
 from neurodino.config import (
     BIRD_ALTITUDES,
     DINO_DUCK_HEIGHT,
+    DINO_DUCK_WIDTH,
     DINO_HEIGHT,
+    DINO_WIDTH,
     GRAVITY,
     GROUND_Y,
     JUMP_CUT_VELOCITY,
@@ -50,7 +52,7 @@ class Object:
 
 @dataclass(slots=True)
 class Dino:
-    """Dino ."""
+    """The player-controlled dino."""
 
     x: int
     y: float
@@ -87,11 +89,13 @@ class Game:
 
         if not self.dino.airborne:
             self.dino.ducking = duck
+            self.dino.width = DINO_DUCK_WIDTH if duck else DINO_WIDTH
             self.dino.height = DINO_DUCK_HEIGHT if duck else DINO_HEIGHT
             self.dino.y = GROUND_Y - self.dino.height
 
         if jump_pressed and not self.dino.airborne:
             self.dino.ducking = False
+            self.dino.width = DINO_WIDTH
             self.dino.height = DINO_HEIGHT
             self.dino.y = GROUND_Y - DINO_HEIGHT
             self.velocity = JUMP_VELOCITY
@@ -109,7 +113,26 @@ class Game:
             self.dino.airborne = True
 
         self._advance_objects(SCROLL_SPEED, self.dino)
+        if self._collides():
+            self.alive = False
+            self.velocity = 0
+            self.dino.airborne = False
+            self.dino.ducking = False
+            self.dino.width = DINO_WIDTH
+            self.dino.height = DINO_HEIGHT
+            self.dino.y = GROUND_Y - DINO_HEIGHT
         self.frames += 1
+
+    def _collides(self) -> bool:
+        """Whether the dino overlaps with any object."""
+        dino = self.dino
+        return any(
+            dino.x < ob.x + ob.width
+            and dino.x + dino.width > ob.x
+            and dino.y < ob.y + ob.height
+            and dino.y + dino.height > ob.y
+            for ob in self.objects
+        )
 
     def _advance_objects(self, dx: float, dino: Dino) -> None:
         for ob in self.objects:

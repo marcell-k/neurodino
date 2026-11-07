@@ -42,10 +42,16 @@ def _draw(display: Surface, images: Images, game: Game) -> None:
 
     for ob in game.objects:
         img = images[ob.image_key(game.frames)]
-        display.blit(img, (int(ob.x), ob.y))
+        bbox = img.get_bounding_rect()
+        x = int(ob.x) + (ob.width - bbox.width) // 2 - bbox.left
+        y = ob.y + ob.height - bbox.bottom
+        display.blit(img, (x, y))
 
     img = images[_dino_key(game)]
-    display.blit(img, (game.dino.x, game.dino.y))
+    bbox = img.get_bounding_rect()
+    x = game.dino.x + (game.dino.width - bbox.width) // 2 - bbox.left
+    y = game.dino.y if game.dino.airborne else GROUND_Y - bbox.bottom
+    display.blit(img, (x, y))
 
 
 def main() -> None:
@@ -67,6 +73,9 @@ def main() -> None:
         game.step(jump=keys[pygame.K_k], duck=keys[pygame.K_j])
         _draw(display, images, game)
         pygame.display.flip()
+        if not game.alive:
+            print(f"Game over. Score: {game.score}")  # noqa: T201
+            running = False
 
     pygame.quit()
 
