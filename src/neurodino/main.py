@@ -1,19 +1,20 @@
 """Application entry point."""
-
+import argparse
+from pathlib import Path
 from random import Random
 
 import pygame
 from pygame import Surface
 
+from neurodino.agent import _actions
 from neurodino.config import (
     BACKGROUND,
-    DINO_HEIGHT,
-    DINO_WIDTH,
     FPS,
     GROUND_Y,
     WORLD_HEIGHT,
     WORLD_WIDTH,
 )
+from neurodino.nn import NeuralNetwork
 from neurodino.sim import Dino, Game
 from neurodino.utils import load_images
 
@@ -56,12 +57,16 @@ def _draw(display: Surface, images: Images, game: Game) -> None:
 
 def main() -> None:
     """Run the application."""
+    parser = argparse.ArgumentParser("Dino")
+    parser.add_argument("--ai", type=Path, default=None, metavar="FILE")
+    args = parser.parse_args()
     pygame.init()
     display = pygame.display.set_mode((WORLD_WIDTH, WORLD_HEIGHT))
     pygame.display.set_caption("Dino")
+    brain = NeuralNetwork.load(args.ai) if args.ai else None
     clock = pygame.time.Clock()
     images = load_images()
-    game = Game(Random(), Dino(80, GROUND_Y - DINO_HEIGHT, DINO_WIDTH, DINO_HEIGHT))
+    game = Game(Random(), Dino.default())
 
     running = True
     while running:
@@ -69,8 +74,14 @@ def main() -> None:
         for e in pygame.event.get():
             if e.type == pygame.QUIT:
                 running = False
-        keys = pygame.key.get_pressed()
-        game.step(jump=keys[pygame.K_k], duck=keys[pygame.K_j])
+
+        if brain is not None:
+            jump, duck = _actions(brain, game)
+            game.step(jump=jump, duck=duck)
+        else:
+            keys = pygame.key.get_pressed()
+            game.step(jump=keys[pygame.K_k], duck=keys[pygame.K_j])
+
         _draw(display, images, game)
         pygame.display.flip()
         if not game.alive:

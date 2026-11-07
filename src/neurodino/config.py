@@ -1,5 +1,5 @@
 """Configs."""
-
+from dataclasses import dataclass
 from pathlib import Path
 
 # UI
@@ -31,3 +31,26 @@ BIRD_ALTITUDES = (
     GROUND_Y - 148,  # between standing and ducking, duck under it
     GROUND_Y - 100,  # below ducking, jump over it
 )
+
+
+# Training
+@dataclass(frozen=True, slots=True)
+class TrainingConfig:
+    """Hyperparameters."""
+
+    population: int = 200
+    elites: int = 10  # copied unchanged into then next generation
+    tournament_size: int = 5  # parents are the best of this many random picks
+    crossover_prob: float = 0.5  # chance a child mixes two parents instead of cloning one
+    episodes: int = 8  # games per network
+    hall_size: int = 20  # per-generation champions re-evaluated on held-out seeds
+    holdout_episodes: int = 50  # fixed seeds used only to pick the network that gets saved
+    mutation_start: float = 0.2  # noise std in the first generation
+    mutation_end: float = 0.02  # noise std in the last generation
+    mutation_rate: float = 0.5  # fraction of weights that get noise in each child
+    curriculum_fraction: float = 0.3  # share of generations spent on easy first
+    workers: int = 4  # parallel evaluation processes
+    curriculum: bool = True
+
+
+DEFAULT_TRAINING = TrainingConfig()

@@ -61,6 +61,11 @@ class Dino:
     ducking: bool = False
     airborne: bool = False
 
+    @staticmethod
+    def default() -> Dino:
+        """Return default `Dino`."""
+        return Dino(80, GROUND_Y - DINO_HEIGHT, DINO_WIDTH, DINO_HEIGHT)
+
 
 class Game:
     """Game."""
