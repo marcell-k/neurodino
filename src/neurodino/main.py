@@ -15,7 +15,7 @@ from neurodino.config import (
     WORLD_HEIGHT,
     WORLD_WIDTH,
 )
-from neurodino.sim import Dino, Game, Object, ObjectType
+from neurodino.sim import Dino, Game
 from neurodino.utils import load_images
 
 type Images = dict[str, Surface]
@@ -42,9 +42,8 @@ def _draw(display: Surface, images: dict[str, Surface], font: Font, game: Game) 
     display.blit(track, (offset + w, GROUND_Y))
 
     for ob in game.objects:
-        img = images[ob.file_name(game.frames)]
-        y = ob.y if ob.type is ObjectType.BIRD else GROUND_Y - img.get_height()
-        display.blit(img, (int(ob.x), y))
+        img = images[ob.image_key(game.frames)]
+        display.blit(img, (int(ob.x), ob.y))
 
     img = images[_dino_key(game)]
     display.blit(img, (game.dino.x, game.dino.y))

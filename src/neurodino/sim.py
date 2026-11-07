@@ -2,57 +2,50 @@
 
 from collections import deque
 from dataclasses import dataclass
-from enum import Enum, IntEnum
 from typing import TYPE_CHECKING
 
-from neurodino.config import DINO_DUCK_HEIGHT, DINO_HEIGHT, GROUND_Y, JUMP_CUT_VELOCITY
+from neurodino.config import (
+    DINO_DUCK_HEIGHT,
+    DINO_HEIGHT,
+    GRAVITY,
+    GROUND_Y,
+    JUMP_CUT_VELOCITY,
+    JUMP_VELOCITY,
+    STEP_MSC,
+    WORLD_WIDTH,
+)
+from neurodino.specs import CACTUS_SPECS, ObjectSpec, ObjectType, Size
 
 if TYPE_CHECKING:
     from random import Random
 
-from neurodino.config import GRAVITY, JUMP_VELOCITY, STEP_MSC, WORLD_WIDTH
-
-
-class ObjectType(Enum):
-    """Object type."""
-
-    SMALL_CACTUS = 0
-    LARGE_CACTUS = 1
-    BIRD = 2
-
-
-Size = IntEnum("Size", [("SMALL", 48), ("MID", 99), ("BIG", 102)])
-
 
 @dataclass(slots=True)
 class Object:
-    """Cactus."""
+    """A moving obstacle."""
 
     x: float
     y: int
-    type: ObjectType
-    size: Size
-    width: int
-    age: int = 0
+    spec: ObjectSpec
     scored: bool = False
 
-    def advance(self) -> None:
-        """Advance."""
-        self.age += 1
+    @property
+    def width(self) -> int:
+        """Width of the object."""
+        return self.spec.width
+
+    @property
+    def height(self) -> int:
+        """Height of the object."""
+        return self.spec.height
+
+    def image_key(self, frame: int) -> str:
+        """Image key for the object's current animation frame."""
+        return self.spec.frame_name(frame * STEP_MSC)
 
     def hits(self, dino: Dino) -> bool:
-        """Whether dino whose top edge is at `y` overlaps with cactus."""
+        """Whether the dino overlaps with this object."""
         return False
-
-    def file_name(self, frame: int) -> str:
-        """Name of the object, used for finding image."""
-        if self.type.name == "BIRD":
-            bird_up = (frame * STEP_MSC) % 500 >= 250  # noqa: PLR2004
-            return "bird_up" if bird_up else "bird_down"
-
-        size = self.size.name.lower()
-        cactus_type = "large" if self.type.name == "LARGE_CACTUS" else "small"
-        return f"{cactus_type}_cactus_{size}"
 
 
 @dataclass(slots=True)
@@ -133,12 +126,5 @@ class Game:
         return False
 
     def _spawn(self) -> None:
-        self.objects.append(Object(WORLD_WIDTH - 1, 300, ObjectType.LARGE_CACTUS, Size.MID, 100))
-        # object_type = random.choice(list(ObjectType))
-        # size = random.choice(list(Size))
-        # if object_type.name == "Cactus":
-        #     cactus_type = random.choice(list(CactusType))
-        #     ob = Object(WORLD_WIDTH - 1, 200, object_type, size, cactus_type.value)
-        # else:
-        #     ob = Object(WORLD_WIDTH - 1, 200, object_type, size, BIRD_WIDTH)
-        # self.objects.append(ob)
+        spec = CACTUS_SPECS[(ObjectType.LARGE_CACTUS, Size.MID)]
+        self.objects.append(Object(x=WORLD_WIDTH - 1, y=spec.ground_y, spec=spec))
