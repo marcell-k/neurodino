@@ -1,4 +1,5 @@
 """Configs."""
+
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -7,8 +8,6 @@ IMAGES_DIR = Path("assets")
 WORLD_WIDTH = 1100
 WORLD_HEIGHT = 600
 GROUND_Y = 480
-TRACK_GROUND_ROW = 10  # row in Track.png that contains the solid ground line
-BACKGROUND = (255, 255, 255)
 
 FPS = 60
 STEP_MSC = 1000 / FPS  # milliseconds per frame
@@ -26,6 +25,10 @@ JUMP_CUT_VELOCITY = -10  # px/frame, upward speed left after releasing jump earl
 # Objects
 SPAWN_GAP_MIN = 400  # px
 SPAWN_GAP_MAX = 900  # px
+GAP_SHRINK_PER_SCORE = 10  # px removed from every spawn gap per passed object
+MIN_SPAWN_GAP = 250  # px, floor even at high scores
+MAX_SCROLL_SPEED = 20  # px/frame, cap for the score-driven speed ramp
+SPEED_GAIN_PER_SCORE = 0.2  # px/frame added per passed object
 BIRD_ALTITUDES = (
     GROUND_Y - 220,  # above standing head, safe to run under
     GROUND_Y - 148,  # between standing and ducking, duck under it
@@ -39,18 +42,16 @@ class TrainingConfig:
     """Hyperparameters."""
 
     population: int = 200
-    elites: int = 10  # copied unchanged into then next generation
+    elites: int = 10  # copied unchanged into the next generation
     tournament_size: int = 5  # parents are the best of this many random picks
     crossover_prob: float = 0.5  # chance a child mixes two parents instead of cloning one
-    episodes: int = 8  # games per network
+    episodes: int = 8  # games per network per generation
     hall_size: int = 20  # per-generation champions re-evaluated on held-out seeds
     holdout_episodes: int = 50  # fixed seeds used only to pick the network that gets saved
     mutation_start: float = 0.2  # noise std in the first generation
     mutation_end: float = 0.02  # noise std in the last generation
     mutation_rate: float = 0.5  # fraction of weights that get noise in each child
-    curriculum_fraction: float = 0.3  # share of generations spent on easy first
     workers: int = 4  # parallel evaluation processes
-    curriculum: bool = True
 
 
 DEFAULT_TRAINING = TrainingConfig()

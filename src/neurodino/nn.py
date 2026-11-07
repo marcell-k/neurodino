@@ -21,18 +21,18 @@ class NeuralNetwork:
 
     w1: Matrix  # (hidden, inputs)
     b1: Vector  # (hidden, )
-    w2: Matrix  # (1, hidden)
+    w2: Matrix  # (3, hidden)
     b2: Vector  # (3,)
 
     @classmethod
-    def random(cls, rng: Generator, input_size: int = 10, hidden_size: int = 6) -> NeuralNetwork:
+    def random(cls, rng: Generator, input_size: int, hidden_size: int = 6) -> NeuralNetwork:
         """Create a network with normally distributed weights scaled by 1/sqrt(fan_in)."""
         w1 = rng.normal(0.0, 1.0 / np.sqrt(input_size), (hidden_size, input_size))
         w2 = rng.normal(0.0, 1.0 / np.sqrt(hidden_size), (3, hidden_size))
         return NeuralNetwork(w1, np.zeros(hidden_size), w2, np.zeros(3))
 
     def forward(self, x: Vector) -> int:
-        """Run one input vector through the network and return the raw output."""
+        """Run one input vector through the network and return the chosen action index."""
         hidden = np.tanh(self.w1 @ x + self.b1)
         return int(np.argmax(self.w2 @ hidden + self.b2))
 
@@ -45,14 +45,15 @@ class NeuralNetwork:
 
         return NeuralNetwork(noisy(self.w1), noisy(self.b1), noisy(self.w2), noisy(self.b2))
 
-    def crossover(self, other: NeuralNetwork, rng: Generator) -> NeuralNetwork:
+    def crossover(self, rng: Generator, other: NeuralNetwork) -> NeuralNetwork:
         """Build a child by taking each hidden unit (its inputs, bias and output) from a parent."""
         from_self = rng.random(self.b1.shape) < 0.5  # noqa: PLR2004
+        from_self_out = rng.random(self.b2.shape) < 0.5  # noqa: PLR2004
         return NeuralNetwork(
             np.where(from_self[:, None], self.w1, other.w1),
             np.where(from_self, self.b1, other.b1),
             np.where(from_self[None, :], self.w2, other.w2),
-            self.b2.copy(),
+            np.where(from_self_out, self.b2, other.b2),
         )
 
     @classmethod

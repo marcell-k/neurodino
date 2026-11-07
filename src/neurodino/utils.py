@@ -3,7 +3,7 @@
 import pygame
 from pygame import Surface
 
-from neurodino.config import IMAGES_DIR, TRACK_GROUND_ROW
+from neurodino.config import IMAGES_DIR
 
 
 def load_images() -> dict[str, Surface]:
@@ -33,5 +33,5 @@ def load_images() -> dict[str, Surface]:
         "dino_run_2": _load_image("Dino/DinoRun2.png"),
         "dino_start": _load_image("Dino/DinoStart.png"),
         "cloud": _load_image("Other/Cloud.png"),
-        "track": _load_image("Other/Track.png", TRACK_GROUND_ROW),
+        "track": _load_image("Other/Track.png", 10),
     }

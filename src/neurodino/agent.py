@@ -5,15 +5,17 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 
-from neurodino.config import GROUND_Y, WORLD_HEIGHT
+from neurodino.config import GROUND_Y, MAX_SCROLL_SPEED, WORLD_HEIGHT
 from neurodino.sim import Dino, Game
 from neurodino.specs import ObjectType
 
 if TYPE_CHECKING:
     from neurodino.nn import NeuralNetwork
 
-MAX_FRAMES = 1000
-SCORE_BONUS = 100
+MAX_FRAMES = 2000
+SCORE_BONUS = 10
+OBJECT_FEATURES = 4
+FEATURE_SIZE = 2 * OBJECT_FEATURES + 4  # two obstacles + airborne, vy, height, speed
 
 
 def _norm_y(y: float) -> float:
@@ -35,18 +37,18 @@ def _features(game: Game) -> list[float]:
                 (GROUND_Y - (ob.y + ob.height)) / 300,  # bird altitude, 0 for cacti
             ]
         else:
-            feats += [1.0, 0.0, 0.0, 1.0]  # sentinel: nothing there
+            feats += [10, 0.0, 0.0, 1.0]  # sentinel: nothing within reach
     feats += [
         0.0 if dino.airborne else 1.0,
-        game.velocity / 20,
+        game.velocity / 20,  # vertical speed (jump physics), not world scroll
+        _norm_y(dino.y),
+        game.speed / MAX_SCROLL_SPEED,
     ]
     return feats
 
 
 def _actions(nn: NeuralNetwork, game: Game) -> tuple[bool, bool]:
-    # TODO: use np.forward()
-    vector = np.array([*_features(game)])
-    action = nn.forward(vector)
+    action = nn.forward(np.array(_features(game)))
     match action:
         case 0:
             return False, False

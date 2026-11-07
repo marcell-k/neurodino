@@ -10,13 +10,17 @@ from neurodino.config import (
     DINO_DUCK_WIDTH,
     DINO_HEIGHT,
     DINO_WIDTH,
+    GAP_SHRINK_PER_SCORE,
     GRAVITY,
     GROUND_Y,
     JUMP_CUT_VELOCITY,
     JUMP_VELOCITY,
+    MAX_SCROLL_SPEED,
+    MIN_SPAWN_GAP,
     SCROLL_SPEED,
     SPAWN_GAP_MAX,
     SPAWN_GAP_MIN,
+    SPEED_GAIN_PER_SCORE,
     STEP_MSC,
     WORLD_WIDTH,
 )
@@ -68,12 +72,13 @@ class Dino:
 
 
 class Game:
-    """Game."""
+    """Game; speed and spawn rate ramp up with the score."""
 
     def __init__(self, rng: Random, dino: Dino) -> None:
         self._rng = rng
         self.objects: deque[Object] = deque()
         self.velocity = 0.0
+        self.speed = SCROLL_SPEED
         self.score = 0
         self.alive: bool = True
         self.dino = dino
@@ -86,7 +91,8 @@ class Game:
         """Advance one time."""
         if not self.alive:
             return
-        self.distance += SCROLL_SPEED
+        self.speed = min(MAX_SCROLL_SPEED, SCROLL_SPEED + SPEED_GAIN_PER_SCORE * self.score)
+        self.distance += self.speed
         if self._should_spawn():
             self._spawn()
         jump_pressed = jump and not self.jump_was_down
@@ -117,7 +123,7 @@ class Game:
         else:
             self.dino.airborne = True
 
-        self._advance_objects(SCROLL_SPEED, self.dino)
+        self._advance_objects(self.speed, self.dino)
         if self._collides():
             self.alive = False
             self.velocity = 0
@@ -157,7 +163,6 @@ class Game:
         spec = self._rng.choice(SPAWN_SPECS)
         y = spec.ground_y if spec.on_ground else self._rng.choice(BIRD_ALTITUDES)
         self.objects.append(Object(x=WORLD_WIDTH - 1, y=y, spec=spec))
-        self.next_spawn_distance = self.distance + self._rng.uniform(
-            SPAWN_GAP_MIN,
-            SPAWN_GAP_MAX,
-        )
+        gap_min = max(MIN_SPAWN_GAP, SPAWN_GAP_MIN - GAP_SHRINK_PER_SCORE * self.score)
+        gap_max = max(gap_min, SPAWN_GAP_MAX - GAP_SHRINK_PER_SCORE * self.score)
+        self.next_spawn_distance = self.distance + self._rng.uniform(gap_min, gap_max)

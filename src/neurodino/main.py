@@ -1,14 +1,15 @@
 """Application entry point."""
+
 import argparse
 from pathlib import Path
 from random import Random
+from typing import TYPE_CHECKING
 
 import pygame
 from pygame import Surface
 
 from neurodino.agent import _actions
 from neurodino.config import (
-    BACKGROUND,
     FPS,
     GROUND_Y,
     WORLD_HEIGHT,
@@ -17,6 +18,9 @@ from neurodino.config import (
 from neurodino.nn import NeuralNetwork
 from neurodino.sim import Dino, Game
 from neurodino.utils import load_images
+
+if TYPE_CHECKING:
+    from pygame.font import Font
 
 type Images = dict[str, Surface]
 
@@ -31,9 +35,9 @@ def _dino_key(game: Game) -> str:
     return "dino_run_1" if (game.frames // 6) % 2 == 0 else "dino_run_2"
 
 
-def _draw(display: Surface, images: Images, game: Game) -> None:
+def _draw(display: Surface, images: Images, game: Game, font: Font) -> None:
     """Draw current state of the game."""
-    display.fill(BACKGROUND)
+    display.fill((255, 255, 255))
 
     track = images["track"]
     w = track.get_width()
@@ -54,6 +58,9 @@ def _draw(display: Surface, images: Images, game: Game) -> None:
     y = game.dino.y if game.dino.airborne else GROUND_Y - bbox.bottom
     display.blit(img, (x, y))
 
+    score = font.render(f"{game.score}", True, (50, 50, 50))  # noqa: FBT003
+    display.blit(score, (WORLD_WIDTH - score.get_width() - 20, 20))
+
 
 def main() -> None:
     """Run the application."""
@@ -66,6 +73,7 @@ def main() -> None:
     brain = NeuralNetwork.load(args.ai) if args.ai else None
     clock = pygame.time.Clock()
     images = load_images()
+    font = pygame.font.Font(None, 25)
     game = Game(Random(), Dino.default())
 
     running = True
@@ -82,7 +90,7 @@ def main() -> None:
             keys = pygame.key.get_pressed()
             game.step(jump=keys[pygame.K_k], duck=keys[pygame.K_j])
 
-        _draw(display, images, game)
+        _draw(display, images, game, font)
         pygame.display.flip()
         if not game.alive:
             print(f"Game over. Score: {game.score}")  # noqa: T201
