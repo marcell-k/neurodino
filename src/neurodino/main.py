@@ -58,7 +58,7 @@ def _draw(display: Surface, images: Images, game: Game, font: Font) -> None:
     y = game.dino.y if game.dino.airborne else GROUND_Y - bbox.bottom
     display.blit(img, (x, y))
 
-    score = font.render(f"{game.score}", True, (50, 50, 50))  # noqa: FBT003
+    score = font.render(f"{int(game.distance)}", True, (50, 50, 50))  # noqa: FBT003
     display.blit(score, (WORLD_WIDTH - score.get_width() - 20, 20))
 
 
@@ -75,6 +75,7 @@ def main() -> None:
     images = load_images()
     font = pygame.font.Font(None, 25)
     game = Game(Random(), Dino.default())
+    holding = False
 
     running = True
     while running:
@@ -84,7 +85,7 @@ def main() -> None:
                 running = False
 
         if brain is not None:
-            jump, duck = _actions(brain, game)
+            jump, duck, holding = _actions(brain, game, holding=holding)
             game.step(jump=jump, duck=duck)
         else:
             keys = pygame.key.get_pressed()
@@ -93,7 +94,7 @@ def main() -> None:
         _draw(display, images, game, font)
         pygame.display.flip()
         if not game.alive:
-            print(f"Game over. Score: {game.score}")  # noqa: T201
+            print(f"Game over. Score: {int(game.distance)}")  # noqa: T201
             running = False
 
     pygame.quit()

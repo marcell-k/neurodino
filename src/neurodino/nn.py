@@ -17,19 +17,19 @@ type Vector = npt.NDArray[np.float64]
 
 @dataclass(frozen=True, slots=True, eq=False)
 class NeuralNetwork:
-    """Input -> tanh -> output (0 - nothing, 1 - duck, 2 - jump)."""
+    """Input -> tanh -> output (0 - nothing, 1 - duck, 2 - short jump, 3 - long jump)."""
 
     w1: Matrix  # (hidden, inputs)
     b1: Vector  # (hidden, )
-    w2: Matrix  # (3, hidden)
-    b2: Vector  # (3,)
+    w2: Matrix  # (4, hidden)
+    b2: Vector  # (4,)
 
     @classmethod
     def random(cls, rng: Generator, input_size: int, hidden_size: int = 6) -> NeuralNetwork:
         """Create a network with normally distributed weights scaled by 1/sqrt(fan_in)."""
         w1 = rng.normal(0.0, 1.0 / np.sqrt(input_size), (hidden_size, input_size))
-        w2 = rng.normal(0.0, 1.0 / np.sqrt(hidden_size), (3, hidden_size))
-        return NeuralNetwork(w1, np.zeros(hidden_size), w2, np.zeros(3))
+        w2 = rng.normal(0.0, 1.0 / np.sqrt(hidden_size), (4, hidden_size))
+        return NeuralNetwork(w1, np.zeros(hidden_size), w2, np.zeros(4))
 
     def forward(self, x: Vector) -> int:
         """Run one input vector through the network and return the chosen action index."""
