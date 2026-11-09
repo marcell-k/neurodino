@@ -39,33 +39,36 @@ MAX_JUMP_HEIGHT = 30  # absolute y: rising above it releases the jump automatica
 SPEED_DROP_COEFFICIENT = 3  # fall speed multiplier while pressing duck in the air
 
 
-# Training
 @dataclass(frozen=True, slots=True)
-class TrainingConfig:
+class Config:
+    """Shared training hyperparameters."""
+
+    episodes: int = 8  # games per network per generation
+    hall_size: int = 20  # per-generation champions re-evaluated on held-out seeds
+    holdout_episodes: int = 50  # fixed seeds used only to pick the network that gets saved
+    workers: int = 4  # parallel evaluation processes
+    patience: int = 100  # stop after this many generations without a 1% mean gain; 0 disables
+
+
+@dataclass(frozen=True, slots=True)
+class TrainingConfig(Config):
     """Hyperparameters."""
 
     population: int = 200
     elites: int = 10  # copied unchanged into the next generation
     tournament_size: int = 5  # parents are the best of this many random picks
     crossover_prob: float = 0.5  # chance a child mixes two parents instead of cloning one
-    episodes: int = 8  # games per network per generation
-    hall_size: int = 20  # per-generation champions re-evaluated on held-out seeds
-    holdout_episodes: int = 50  # fixed seeds used only to pick the network that gets saved
     mutation_start: float = 0.2  # noise std in the first generation
     mutation_end: float = 0.02  # noise std in the last generation
     mutation_rate: float = 0.5  # fraction of weights that get noise in each child
-    workers: int = 4  # parallel evaluation processes
 
 
 @dataclass(frozen=True, slots=True)
-class CMAConfig:
+class CMAConfig(Config):
     """Hyperparameters for CMA-ES training."""
 
-    sigma: float = 0.5
-    episodes: int = 8
-    hall_size: int = 20
     holdout_episodes: int = 70
-    workers: int = 4
+    sigma: float = 0.5
 
 
 DEFAULT_CMA = CMAConfig()

@@ -20,6 +20,8 @@ if TYPE_CHECKING:
 
 type Hall = list[tuple[float, NeuralNetwork]]
 
+_IMPROVEMENT_FACTOR = 1.01  # mean score must gain 1% over the best to reset patience
+
 
 def evaluate(nn: NeuralNetwork, seeds: list[int]) -> float:
     """Median fitness of a network over `seeds`."""
@@ -39,6 +41,8 @@ def train_cma(generations: int, config: CMAConfig, rng: Generator) -> NeuralNetw
     holdout_seeds = rng.integers(0, 2**31, config.holdout_episodes).tolist()
     hall: Hall = []
     best = -np.inf
+    best_mean = -np.inf
+    stale = 0
     print_every = int(generations / 10)
 
     with ProcessPoolExecutor(max_workers=config.workers) as pool:
@@ -54,10 +58,24 @@ def train_cma(generations: int, config: CMAConfig, rng: Generator) -> NeuralNetw
                 champion = from_vector(x[i], FEATURE_SIZE)
                 hall.append((evaluate(champion, validation_seeds), champion))
 
+            mean_score = float(np.mean(scores))
             if generation % print_every == 0:
                 print(  # noqa: T201
-                    f"gen {generation:4d} best {scores[i]:9.1f} mean {float(np.mean(scores)):9.1f}"
+                    f"gen {generation:4d} best {scores[i]:9.1f} mean {mean_score:9.1f}"
                 )
+
+            if mean_score > best_mean * _IMPROVEMENT_FACTOR:
+                best_mean = mean_score
+                stale = 0
+            else:
+                stale += 1
+
+            if config.patience > 0 and stale >= config.patience:
+                print(  # noqa: T201
+                    f"early stop at gen {generation:4d}: mean {mean_score:9.1f} did not beat "
+                    f"{best_mean * _IMPROVEMENT_FACTOR:9.1f} for {stale} generations"
+                )
+                break
     return _pick_champion(hall, holdout_seeds, config.hall_size)
 
 
@@ -94,6 +112,8 @@ def train(generations: int, config: TrainingConfig, rng: Generator) -> NeuralNet
     holdout_seeds = rng.integers(0, 2**31, config.holdout_episodes).tolist()
     hall: Hall = []
     seen: set[int] = set()  # elites can stay champion for several generations
+    best_mean = -np.inf
+    stale = 0
 
     with ProcessPoolExecutor(max_workers=config.workers) as pool:
         for generation in range(generations):
@@ -107,11 +127,24 @@ def train(generations: int, config: TrainingConfig, rng: Generator) -> NeuralNet
                 hall.append((evaluate(champion, validation_seeds), champion))
                 seen.add(id(champion))
 
+            mean_score = float(np.mean(scores))
             if generation % 10 == 0:
                 print(  # noqa: T201
-                    f"gen {generation:4d} best {scores[order[0]]:9.1f} "
-                    f"mean {float(np.mean(scores)):9.1f}"
+                    f"gen {generation:4d} best {scores[order[0]]:9.1f} mean {mean_score:9.1f}"
                 )
+
+            if mean_score > best_mean * _IMPROVEMENT_FACTOR:
+                best_mean = mean_score
+                stale = 0
+            else:
+                stale += 1
+
+            if config.patience > 0 and stale >= config.patience:
+                print(  # noqa: T201
+                    f"early stop at gen {generation:4d}: mean {mean_score:9.1f} did not beat "
+                    f"{best_mean * _IMPROVEMENT_FACTOR:9.1f} for {stale} generations"
+                )
+                break
 
             elites = ranked[: config.elites]
             strength = _mutation_strength(generation, generations, config)
