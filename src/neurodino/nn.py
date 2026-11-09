@@ -15,17 +15,17 @@ type Matrix = npt.NDArray[np.float64]
 type Vector = npt.NDArray[np.float64]
 
 HIDDEN_SIZE = 6
-N_ACTIONS = 4
+N_ACTIONS = 3
 
 
 @dataclass(frozen=True, slots=True, eq=False)
 class NeuralNetwork:
-    """Input -> tanh -> output (0 - nothing, 1 - duck, 2 - short jump, 3 - long jump)."""
+    """Input -> tanh -> output (key state: 0 - nothing, 1 - hold duck, 2 - hold jump)."""
 
     w1: Matrix  # (hidden, inputs)
     b1: Vector  # (hidden, )
-    w2: Matrix  # (4, hidden)
-    b2: Vector  # (4,)
+    w2: Matrix  # (actions, hidden)
+    b2: Vector  # (actions,)
 
     @classmethod
     def random(

@@ -10,13 +10,15 @@ from pygame import Surface
 
 from neurodino.agent import actions
 from neurodino.config import (
+    DINO_HEIGHT,
     FPS,
     GROUND_Y,
+    RENDER_SCALE,
     WORLD_HEIGHT,
     WORLD_WIDTH,
 )
 from neurodino.nn import NeuralNetwork
-from neurodino.sim import Dino, Game
+from neurodino.sim import Game
 from neurodino.utils import load_images
 
 if TYPE_CHECKING:
@@ -24,11 +26,13 @@ if TYPE_CHECKING:
 
 type Images = dict[str, Surface]
 
+SCALE = RENDER_SCALE
+
 
 def _dino_key(game: Game) -> str:
     if not game.alive:
         return "dino_dead"
-    if game.dino.airborne:
+    if game.dino.jumping:
         return "dino_jump"
     if game.dino.ducking:
         return "dino_duck_1" if (game.frames // 6) % 2 == 0 else "dino_duck_2"
@@ -41,25 +45,25 @@ def _draw(display: Surface, images: Images, game: Game, font: Font) -> None:
 
     track = images["track"]
     w = track.get_width()
-    offset = -(int(game.distance) % w)
-    display.blit(track, (offset, GROUND_Y))
-    display.blit(track, (offset + w, GROUND_Y))
+    offset = -(int(game.distance * SCALE) % w)
+    display.blit(track, (offset, GROUND_Y * SCALE))
+    display.blit(track, (offset + w, GROUND_Y * SCALE))
 
     for ob in game.objects:
         img = images[ob.image_key(game.frames)]
         bbox = img.get_bounding_rect()
-        x = int(ob.x) + (ob.width - bbox.width) // 2 - bbox.left
-        y = ob.y + ob.height - bbox.bottom
+        x = round((ob.x + ob.width / 2) * SCALE - bbox.width / 2) - bbox.left
+        y = (ob.y + ob.height) * SCALE - bbox.bottom
         display.blit(img, (x, y))
 
     img = images[_dino_key(game)]
     bbox = img.get_bounding_rect()
-    x = game.dino.x + (game.dino.width - bbox.width) // 2 - bbox.left
-    y = game.dino.y if game.dino.airborne else GROUND_Y - bbox.bottom
+    x = game.dino.x * SCALE - bbox.left
+    y = (game.dino.y + DINO_HEIGHT) * SCALE - bbox.bottom
     display.blit(img, (x, y))
 
-    score = font.render(f"{int(game.distance)}", True, (50, 50, 50))  # noqa: FBT003
-    display.blit(score, (WORLD_WIDTH - score.get_width() - 20, 20))
+    score = font.render(f"{game.score:05d}", True, (50, 50, 50))  # noqa: FBT003
+    display.blit(score, (WORLD_WIDTH * SCALE - score.get_width() - 20, 20))
 
 
 def main() -> None:
@@ -68,14 +72,13 @@ def main() -> None:
     parser.add_argument("--ai", type=Path, default=None, metavar="FILE")
     args = parser.parse_args()
     pygame.init()
-    display = pygame.display.set_mode((WORLD_WIDTH, WORLD_HEIGHT))
+    display = pygame.display.set_mode((WORLD_WIDTH * SCALE, WORLD_HEIGHT * SCALE))
     pygame.display.set_caption("Dino")
     brain = NeuralNetwork.load(args.ai) if args.ai else None
     clock = pygame.time.Clock()
     images = load_images()
     font = pygame.font.Font(None, 25)
-    game = Game(Random(), Dino.default())
-    holding = False
+    game = Game(Random())
 
     running = True
     while running:
@@ -85,7 +88,7 @@ def main() -> None:
                 running = False
 
         if brain is not None:
-            jump, duck, holding = actions(brain, game, holding=holding)
+            jump, duck = actions(brain, game)
             game.step(jump=jump, duck=duck)
         else:
             keys = pygame.key.get_pressed()
@@ -94,7 +97,7 @@ def main() -> None:
         _draw(display, images, game, font)
         pygame.display.flip()
         if not game.alive:
-            print(f"Game over. Score: {int(game.distance)}")  # noqa: T201
+            print(f"Game over. Score: {game.score}")  # noqa: T201
             running = False
 
     pygame.quit()

@@ -5,35 +5,38 @@ from pathlib import Path
 
 # UI
 IMAGES_DIR = Path("assets")
-WORLD_WIDTH = 1100
-WORLD_HEIGHT = 600
-GROUND_Y = 480
+RENDER_SCALE = 2  # the sprite pack is ~2x Chromium's native sprite sizes
+
+# World, from Chromium's default dimensions and bottom padding
+WORLD_WIDTH = 600
+WORLD_HEIGHT = 150
+BOTTOM_PAD = 10
+GROUND_Y = WORLD_HEIGHT - BOTTOM_PAD  # y of the ground line, where feet and cacti stand
 
 FPS = 60
 STEP_MS = 1000 / FPS  # milliseconds per frame
-SCROLL_SPEED = 8  # px/frame
-GRAVITY = 0.8  # px/frame²
 
-# Dino
-DINO_HEIGHT = 94
-DINO_DUCK_HEIGHT = 60
-DINO_WIDTH = 88
-DINO_DUCK_WIDTH = 118
-JUMP_VELOCITY = -20  # px/frame
-JUMP_CUT_VELOCITY = -10  # px/frame, upward speed left after releasing jump early
+# Runner
+START_SPEED = 6  # px/frame
+MAX_SPEED = 13  # px/frame
+ACCELERATION = 0.001  # px/frame added to the speed every frame, until MAX_SPEED
+CLEAR_FRAMES = 180  # clearTime 3000 ms: no obstacles before this many frames have run
+GAP_COEFFICIENT = 0.6
+MAX_GAP_COEFFICIENT = 1.5
+MAX_OBSTACLE_SIZE = 3  # cacti come in groups of 1 to 3
+MAX_OBSTACLE_DUPLICATION = 2  # at most this many obstacles of one type in a row
+SCORE_COEFFICIENT = 0.025  # score = round(distance * coefficient)
 
-# Objects
-SPAWN_GAP_MIN = 400  # px
-SPAWN_GAP_MAX = 900  # px
-GAP_SHRINK_PER_SCORE = 10  # px removed from every spawn gap per passed object
-MIN_SPAWN_GAP = 250  # px, floor even at high scores
-MAX_SCROLL_SPEED = 20  # px/frame, cap for the score-driven speed ramp
-SPEED_GAIN_PER_SCORE = 0.2  # px/frame added per passed object
-BIRD_ALTITUDES = (
-    GROUND_Y - 220,  # above standing head, safe to run under
-    GROUND_Y - 148,  # between standing and ducking, duck under it
-    GROUND_Y - 100,  # below ducking, jump over it
-)
+# Dino, from Chromium's T-Rex config
+DINO_X = 50
+DINO_WIDTH = 44
+DINO_HEIGHT = 47
+GRAVITY = 0.6  # px/frame²
+INITIAL_JUMP_VELOCITY = -10  # px/frame, speed / 10 is added on top of it
+DROP_VELOCITY = -5  # px/frame, upward speed left after releasing jump
+MIN_JUMP_HEIGHT = 30  # px above the ground that must be reached before a release counts
+MAX_JUMP_HEIGHT = 30  # absolute y: rising above it releases the jump automatically
+SPEED_DROP_COEFFICIENT = 3  # fall speed multiplier while pressing duck in the air
 
 
 # Training
