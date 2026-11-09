@@ -11,7 +11,15 @@ import numpy as np
 from neurodino.agent import FEATURE_SIZE, run_episode
 from neurodino.cma_es import CMAES
 from neurodino.config import DEFAULT_CMA, DEFAULT_TRAINING, CMAConfig
-from neurodino.nn import NeuralNetwork, Vector, from_vector, param_count, to_vector
+from neurodino.nn import (
+    HIDDEN_SIZE,
+    N_ACTIONS,
+    NeuralNetwork,
+    Vector,
+    from_vector,
+    param_count,
+    to_vector,
+)
 
 if TYPE_CHECKING:
     from numpy.random import Generator
@@ -21,6 +29,30 @@ if TYPE_CHECKING:
 type Hall = list[tuple[float, NeuralNetwork]]
 
 _IMPROVEMENT_FACTOR = 1.01  # mean score must gain 1% over the best to reset patience
+_REFLEX_BIAS = 0.8  # jump when the nearest obstacle is ~96 px away
+_REFLEX_BIAS_RANGE = (0.4, 0.9)  # seed diversity: jump thresholds from ~48 to ~108 px
+_SEEDED_FRACTION = 0.75  # share of the first GA generation that inherits the reflex
+
+
+def _reflex_network(jump_bias: float = _REFLEX_BIAS) -> NeuralNetwork:
+    """Jump when the nearest obstacle enters range, otherwise do nothing."""
+    w1 = np.zeros((HIDDEN_SIZE, FEATURE_SIZE))
+    b1 = np.zeros(HIDDEN_SIZE)
+    w2 = np.zeros((N_ACTIONS, HIDDEN_SIZE))
+    w1[0, 0] = -5.0  # nearest-obstacle distance feature
+    b1[0] = jump_bias
+    w2[2, 0] = 1.0  # jump action
+    return NeuralNetwork(w1, b1, w2, np.zeros(N_ACTIONS))
+
+
+def _initial_population(rng: Generator, size: int) -> list[NeuralNetwork]:
+    """Seed most of the population with reflexes, keep the rest random for exploration."""
+    seeded_count = max(1, int(size * _SEEDED_FRACTION))
+    biases = np.linspace(*_REFLEX_BIAS_RANGE, seeded_count)
+    biases[0] = _REFLEX_BIAS
+    seeded = [_reflex_network(float(bias)) for bias in biases]
+    random = [NeuralNetwork.random(rng, FEATURE_SIZE) for _ in range(size - seeded_count)]
+    return [*seeded, *random]
 
 
 def evaluate(nn: NeuralNetwork, seeds: list[int]) -> float:
@@ -35,7 +67,7 @@ def evaluate_vector(vector: Vector, seeds: list[int]) -> float:
 
 def train_cma(generations: int, config: CMAConfig, rng: Generator) -> NeuralNetwork:
     """Run the CMA-ES loop and return the champion."""
-    start = NeuralNetwork.random(rng, FEATURE_SIZE)
+    start = _reflex_network()
     cma = CMAES(param_count(FEATURE_SIZE), to_vector(start), config.sigma)
     validation_seeds = rng.integers(0, 2**31, config.episodes).tolist()
     holdout_seeds = rng.integers(0, 2**31, config.holdout_episodes).tolist()
@@ -43,7 +75,7 @@ def train_cma(generations: int, config: CMAConfig, rng: Generator) -> NeuralNetw
     best = -np.inf
     best_mean = -np.inf
     stale = 0
-    print_every = int(generations / 10)
+    print_every = max(1, int(generations / 10))
 
     with ProcessPoolExecutor(max_workers=config.workers) as pool:
         for generation in range(generations):
@@ -107,7 +139,7 @@ def train(generations: int, config: TrainingConfig, rng: Generator) -> NeuralNet
         msg = f"generations must be >= 1, got {generations}"
         raise ValueError(msg)
 
-    population = [NeuralNetwork.random(rng, FEATURE_SIZE) for _ in range(config.population)]
+    population = _initial_population(rng, config.population)
     validation_seeds = rng.integers(0, 2**31, config.episodes).tolist()
     holdout_seeds = rng.integers(0, 2**31, config.holdout_episodes).tolist()
     hall: Hall = []
