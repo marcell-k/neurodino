@@ -54,4 +54,16 @@ class TrainingConfig:
     workers: int = 4  # parallel evaluation processes
 
 
+@dataclass(frozen=True, slots=True)
+class CMAConfig:
+    """Hyperparameters for CMA-ES training."""
+
+    sigma: float = 0.5
+    episodes: int = 8
+    hall_size: int = 20
+    holdout_episodes: int = 70
+    workers: int = 4
+
+
+DEFAULT_CMA = CMAConfig()
 DEFAULT_TRAINING = TrainingConfig()

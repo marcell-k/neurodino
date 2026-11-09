@@ -14,6 +14,9 @@ if TYPE_CHECKING:
 type Matrix = npt.NDArray[np.float64]
 type Vector = npt.NDArray[np.float64]
 
+HIDDEN_SIZE = 6
+N_ACTIONS = 4
+
 
 @dataclass(frozen=True, slots=True, eq=False)
 class NeuralNetwork:
@@ -25,11 +28,13 @@ class NeuralNetwork:
     b2: Vector  # (4,)
 
     @classmethod
-    def random(cls, rng: Generator, input_size: int, hidden_size: int = 6) -> NeuralNetwork:
+    def random(
+        cls, rng: Generator, input_size: int, hidden_size: int = HIDDEN_SIZE
+    ) -> NeuralNetwork:
         """Create a network with normally distributed weights scaled by 1/sqrt(fan_in)."""
         w1 = rng.normal(0.0, 1.0 / np.sqrt(input_size), (hidden_size, input_size))
-        w2 = rng.normal(0.0, 1.0 / np.sqrt(hidden_size), (4, hidden_size))
-        return NeuralNetwork(w1, np.zeros(hidden_size), w2, np.zeros(4))
+        w2 = rng.normal(0.0, 1.0 / np.sqrt(hidden_size), (N_ACTIONS, hidden_size))
+        return NeuralNetwork(w1, np.zeros(hidden_size), w2, np.zeros(N_ACTIONS))
 
     def forward(self, x: Vector) -> int:
         """Run one input vector through the network and return the chosen action index."""
@@ -65,3 +70,34 @@ class NeuralNetwork:
     def save(self, path: Path) -> None:
         """Write the weights and biases to a .npz file."""
         np.savez(path, w1=self.w1, b1=self.b1, w2=self.w2, b2=self.b2)
+
+
+def _layer_shapes(input_size: int, hidden_size: int) -> tuple[tuple[tuple[int, ...], int], ...]:
+    """Return `(shape, size)` for each parameter array, in vector order."""
+    return (
+        ((hidden_size, input_size), hidden_size * input_size),
+        ((hidden_size,), hidden_size),
+        ((N_ACTIONS, hidden_size), N_ACTIONS * hidden_size),
+        ((N_ACTIONS,), N_ACTIONS),
+    )
+
+
+def param_count(input_size: int, hidden_size: int = HIDDEN_SIZE) -> int:
+    """Return the number of scalar parameters in a network with these layer sizes."""
+    return sum(size for _, size in _layer_shapes(input_size, hidden_size))
+
+
+def to_vector(network: NeuralNetwork) -> Vector:
+    """Flatten the weights and biases into one vector, in w1, b1, w2, b2 order."""
+    return np.concatenate((network.w1.ravel(), network.b1, network.w2.ravel(), network.b2))
+
+
+def from_vector(vector: Vector, input_size: int, hidden_size: int = HIDDEN_SIZE) -> NeuralNetwork:
+    """Rebuild a network from a vector written by `to_vector`."""
+    parts: list[Vector] = []
+    offset = 0
+    for shape, size in _layer_shapes(input_size, hidden_size):
+        parts.append(np.array(vector[offset : offset + size]).reshape(shape))
+        offset += size
+    w1, b1, w2, b2 = parts
+    return NeuralNetwork(w1, b1, w2, b2)
