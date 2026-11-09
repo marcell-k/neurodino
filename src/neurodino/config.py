@@ -47,7 +47,7 @@ class Config:
     hall_size: int = 20  # per-generation champions re-evaluated on held-out seeds
     holdout_episodes: int = 50  # fixed seeds used only to pick the network that gets saved
     workers: int = 4  # parallel evaluation processes
-    patience: int = 100  # stop after this many generations without a 1% mean gain; 0 disables
+    patience: int = 15  # stop after this many generations without a 1% mean gain; 0 disables
 
 
 @dataclass(frozen=True, slots=True)
@@ -55,11 +55,11 @@ class TrainingConfig(Config):
     """Hyperparameters."""
 
     population: int = 200
-    elites: int = 10  # copied unchanged into the next generation
+    elites: int = 20  # copied unchanged into the next generation
     tournament_size: int = 5  # parents are the best of this many random picks
     crossover_prob: float = 0.5  # chance a child mixes two parents instead of cloning one
-    mutation_start: float = 0.2  # noise std in the first generation
-    mutation_end: float = 0.02  # noise std in the last generation
+    mutation_start: float = 0.05  # noise std in the first generation
+    mutation_end: float = 0.01  # noise std in the last generation
     mutation_rate: float = 0.5  # fraction of weights that get noise in each child
 
 
@@ -68,7 +68,7 @@ class CMAConfig(Config):
     """Hyperparameters for CMA-ES training."""
 
     holdout_episodes: int = 70
-    sigma: float = 0.5
+    sigma: float = 0.05  # preserves the seeded reflex; 0.5 from random init killed every starter
 
 
 DEFAULT_CMA = CMAConfig()
